@@ -59,6 +59,6 @@ The `Trailer` composition is an ~18s vertical trailer (1080×1920, 30fps) for Ti
 "A DAY IN MY LIFE" title → accelerating cuts with subtle zooms → hero shot → "FULL VIDEO OUT NOW." end card.
 All text stays inside the TikTok/Reels safe zone (toggle `showSafeZone` in the Studio to see it). No music is added.
 
-1. Put the footage in `public/footage/`.
+1. Put the footage at `public/footage/day-in-the-life.mov` (git-ignored; it is ~1 GB).
 2. In the Studio (`npm run dev`), set `source` and tune each shot's `startAt` (seconds), `durationInFrames`, `zoom` and `focusX`.
 3. Render: `npm run render:trailer` → `out/trailer.mp4`.

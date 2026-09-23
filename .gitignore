@@ -5,3 +5,7 @@ dist
 
 # Ignore the output video from Git but not videos you import into src/.
 out
+
+# Raw footage is too large for git; keep it local.
+public/footage/*
+!public/footage/.gitkeep

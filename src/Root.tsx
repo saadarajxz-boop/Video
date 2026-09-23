@@ -5,6 +5,7 @@ import { Logo } from "./HelloWorld/Logo";
 import { Trailer } from "./Trailer/Trailer";
 import {
   defaultShots,
+  FOOTAGE,
   FPS,
   totalDuration,
   trailerSchema,
@@ -28,7 +29,7 @@ export const RemotionRoot: React.FC = () => {
         width={1080}
         height={1920}
         defaultProps={{
-          source: "",
+          source: FOOTAGE,
           sourceAudio: false,
           showSafeZone: false,
           titleText: "A DAY IN MY LIFE",

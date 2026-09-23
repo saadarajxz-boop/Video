@@ -30,19 +30,43 @@ export const trailerSchema = z.object({
 export type Shot = z.infer<typeof shotSchema>;
 export type TrailerProps = z.infer<typeof trailerSchema>;
 
-// Edit rhythm for an 18s trailer: a held opener under the title, cuts that
-// get shorter as the build climbs, one held hero shot, then the end card.
-// The `startAt` values are placeholders until the footage has been reviewed.
-const rhythm = [
-  60, 36, 33, 30, 27, 24, 21, 18, 18, 15, 15, 12, 12, 60, 24, 21, 18, 90,
+export const FOOTAGE = "footage/day-in-the-life.mov";
+
+// Selects from the 12-minute "Day in the Life" footage, in story order:
+// morning → kitchen → car → gym (cuts tighten) → hero pose → night → end card.
+// startAt is seconds into the footage; focusX keeps the subject in the 9:16 crop.
+const selects: [startAt: number, durationInFrames: number, focusX: number][] = [
+  [0.5, 60, 50], // waking up in bed (title card)
+  [17.5, 30, 53], // brushing teeth
+  [131.2, 24, 55], // mixing the pancake batter
+  [164.6, 24, 57], // cracking eggs over the pan
+  [168.3, 21, 53], // overhead: eggs in the pan
+  [175.2, 21, 57], // pouring pancake batter
+  [216.0, 18, 32], // overhead: pancake in the pan
+  [505.5, 24, 42], // flexing in the car
+  [508.2, 18, 50], // gym: incline press, wide
+  [515.0, 15, 38], // gym: plate-loaded row
+  [521.0, 15, 32], // gym: pulldown
+  [534.0, 12, 50], // gym: lateral raises
+  [540.6, 12, 57], // gym: shoulder press
+  [558.0, 12, 40], // gym: cable triceps
+  [574.5, 12, 43], // gym: incline curls
+  [582.5, 12, 50], // gym: preacher curls
+  [588.1, 60, 40], // hero: double-bicep pose (flash lands here)
+  [602.0, 24, 53], // back pose
+  [608.6, 18, 65], // laughing on the way home
+  [687.0, 18, 57], // night smoothie
+  [545.0, 87, 50], // end card over the moody gym back shot
 ];
 
-export const defaultShots: Shot[] = rhythm.map((durationInFrames, i) => ({
-  startAt: i * 4,
-  durationInFrames,
-  zoom: i % 2 === 0 ? 1 : -1,
-  focusX: 50,
-}));
+export const defaultShots: Shot[] = selects.map(
+  ([startAt, durationInFrames, focusX], i) => ({
+    startAt,
+    durationInFrames,
+    focusX,
+    zoom: i % 2 === 0 ? 1 : -1,
+  }),
+);
 
 export const totalDuration = (shots: Shot[]) =>
   shots.reduce((sum, s) => sum + s.durationInFrames, 0);
