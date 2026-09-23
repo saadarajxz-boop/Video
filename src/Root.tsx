@@ -3,6 +3,8 @@ import { Composition } from "remotion";
 import { HelloWorld } from "./HelloWorld";
 import { Logo } from "./HelloWorld/Logo";
 import { Trailer } from "./Trailer/Trailer";
+import { FullVideo } from "./FullVideo/FullVideo";
+import { FULL_DURATION_FRAMES } from "./FullVideo/edit";
 import {
   defaultShots,
   defaultVoiceovers,
@@ -29,6 +31,15 @@ const trailerProps: TrailerProps = {
 export const RemotionRoot: React.FC = () => {
   return (
     <>
+      {/* The full, uncut video with captions, graphics and leveled audio */}
+      <Composition
+        id="FullVideo"
+        component={FullVideo}
+        durationInFrames={FULL_DURATION_FRAMES}
+        fps={30}
+        width={1920}
+        height={1080}
+      />
       {/* 9:16 trailer for TikTok / Reels: npm run render:trailer */}
       <Composition
         id="Trailer"

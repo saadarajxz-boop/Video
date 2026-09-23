@@ -65,3 +65,14 @@ The sound is an original score synthesized by `scripts/make_score.py` (no copyri
 1. Put the footage at `public/footage/day-in-the-life.mov` (git-ignored; it is ~1 GB).
 2. After changing the edit, regenerate the score: `npm run score` (needs Python with numpy).
 3. Render: `npm run render:trailer` → `out/trailer.mp4`, `npm run render:trailer-wide` → `out/trailer-wide.mp4`.
+
+## Full video edit (`FullVideo`)
+
+The complete 12-minute video, **uncut and in original order**, with everything layered on top:
+
+- Word-by-word captions (`src/FullVideo/captions.json`, built from `scripts/transcript.json` by `npm run captions`).
+- Jump-zoom punch-ins on sentence starts during the car talk.
+- Quote cards for key lines, a follower counter, info cards for facts/tips, section titles, an opening title and a subscribe button.
+- Color fixes per section (switched on scene cuts) and leveled, loudness-normalized audio (`scripts/level_audio.py`, target -14 LUFS).
+
+Edit the overlays in `src/FullVideo/edit.ts`. Render with `npm run render:full` → `out/day-in-the-life-edited.mp4`.

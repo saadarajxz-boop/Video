@@ -30,6 +30,9 @@
     "upgrade": "remotion upgrade",
     "lint": "eslint src && tsc",
     "score": "node --experimental-strip-types scripts/cues.mts > scripts/cues.json && python3 scripts/make_score.py scripts/cues.json public/trailer/score.wav",
+    "level-audio": "python3 scripts/level_audio.py public/footage/raw48.wav public/footage/leveled.wav && remotion ffmpeg -y -i public/footage/leveled.wav -af loudnorm=I=-14:TP=-1.5:LRA=11 -ar 48000 -c:a pcm_s16le public/footage/audio-leveled.wav",
+    "captions": "python3 scripts/make_captions.py scripts/transcript.json src/FullVideo/captions.json",
+    "render:full": "remotion render FullVideo out/day-in-the-life-edited.mp4 --codec=h264 --crf=20",
     "render:trailer": "remotion render Trailer out/trailer.mp4 --codec=h264 --crf=18",
     "render:trailer-wide": "remotion render TrailerWide out/trailer-wide.mp4 --codec=h264 --crf=18"
   },
