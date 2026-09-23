@@ -2,12 +2,40 @@ import "./index.css";
 import { Composition } from "remotion";
 import { HelloWorld } from "./HelloWorld";
 import { Logo } from "./HelloWorld/Logo";
+import { Trailer } from "./Trailer/Trailer";
+import {
+  defaultShots,
+  FPS,
+  totalDuration,
+  trailerSchema,
+} from "./Trailer/shots";
 
 // Each <Composition> is an entry in the sidebar!
 
 export const RemotionRoot: React.FC = () => {
   return (
     <>
+      {/* 9:16 trailer for TikTok / Reels: npm run render:trailer */}
+      <Composition
+        id="Trailer"
+        component={Trailer}
+        schema={trailerSchema}
+        durationInFrames={totalDuration(defaultShots)}
+        calculateMetadata={({ props }) => ({
+          durationInFrames: totalDuration(props.shots),
+        })}
+        fps={FPS}
+        width={1080}
+        height={1920}
+        defaultProps={{
+          source: "",
+          sourceAudio: false,
+          showSafeZone: false,
+          titleText: "A DAY IN MY LIFE",
+          endText: "FULL VIDEO OUT NOW.",
+          shots: defaultShots,
+        }}
+      />
       <Composition
         // You can take the "id" to render a video:
         // npx remotion render HelloWorld

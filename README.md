@@ -52,3 +52,13 @@ Found an issue with Remotion? [File an issue here](https://github.com/remotion-d
 ## License
 
 Note that for some entities a company license is needed. [Read the terms here](https://github.com/remotion-dev/remotion/blob/main/LICENSE.md).
+
+## "Day in the Life" trailer (9:16)
+
+The `Trailer` composition is an ~18s vertical trailer (1080×1920, 30fps) for TikTok / Reels:
+"A DAY IN MY LIFE" title → accelerating cuts with subtle zooms → hero shot → "FULL VIDEO OUT NOW." end card.
+All text stays inside the TikTok/Reels safe zone (toggle `showSafeZone` in the Studio to see it). No music is added.
+
+1. Put the footage in `public/footage/`.
+2. In the Studio (`npm run dev`), set `source` and tune each shot's `startAt` (seconds), `durationInFrames`, `zoom` and `focusX`.
+3. Render: `npm run render:trailer` → `out/trailer.mp4`.
