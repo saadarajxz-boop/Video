@@ -5,11 +5,24 @@ import { Logo } from "./HelloWorld/Logo";
 import { Trailer } from "./Trailer/Trailer";
 import {
   defaultShots,
+  defaultVoiceovers,
   FOOTAGE,
   FPS,
+  SCORE,
   totalDuration,
+  TrailerProps,
   trailerSchema,
 } from "./Trailer/shots";
+
+const trailerProps: TrailerProps = {
+  source: FOOTAGE,
+  score: SCORE,
+  showSafeZone: false,
+  titleText: "A DAY IN MY LIFE",
+  endText: "FULL VIDEO OUT NOW.",
+  shots: defaultShots,
+  voiceovers: defaultVoiceovers,
+};
 
 // Each <Composition> is an entry in the sidebar!
 
@@ -28,14 +41,21 @@ export const RemotionRoot: React.FC = () => {
         fps={FPS}
         width={1080}
         height={1920}
-        defaultProps={{
-          source: FOOTAGE,
-          sourceAudio: false,
-          showSafeZone: false,
-          titleText: "A DAY IN MY LIFE",
-          endText: "FULL VIDEO OUT NOW.",
-          shots: defaultShots,
-        }}
+        defaultProps={trailerProps}
+      />
+      {/* Same edit in the footage's original 16:9 */}
+      <Composition
+        id="TrailerWide"
+        component={Trailer}
+        schema={trailerSchema}
+        durationInFrames={totalDuration(defaultShots)}
+        calculateMetadata={({ props }) => ({
+          durationInFrames: totalDuration(props.shots),
+        })}
+        fps={FPS}
+        width={1920}
+        height={1080}
+        defaultProps={trailerProps}
       />
       <Composition
         // You can take the "id" to render a video:

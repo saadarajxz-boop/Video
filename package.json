@@ -29,7 +29,9 @@
     "build": "remotion bundle",
     "upgrade": "remotion upgrade",
     "lint": "eslint src && tsc",
-    "render:trailer": "remotion render Trailer out/trailer.mp4 --codec=h264 --crf=18"
+    "score": "node --experimental-strip-types scripts/cues.mts > scripts/cues.json && python3 scripts/make_score.py scripts/cues.json public/trailer/score.wav",
+    "render:trailer": "remotion render Trailer out/trailer.mp4 --codec=h264 --crf=18",
+    "render:trailer-wide": "remotion render TrailerWide out/trailer-wide.mp4 --codec=h264 --crf=18"
   },
   "sideEffects": [
     "*.css"

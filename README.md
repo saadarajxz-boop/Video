@@ -53,12 +53,15 @@ Found an issue with Remotion? [File an issue here](https://github.com/remotion-d
 
 Note that for some entities a company license is needed. [Read the terms here](https://github.com/remotion-dev/remotion/blob/main/LICENSE.md).
 
-## "Day in the Life" trailer (9:16)
+## "Day in the Life" trailer
 
-The `Trailer` composition is an ~18s vertical trailer (1080×1920, 30fps) for TikTok / Reels:
-"A DAY IN MY LIFE" title → accelerating cuts with subtle zooms → hero shot → "FULL VIDEO OUT NOW." end card.
-All text stays inside the TikTok/Reels safe zone (toggle `showSafeZone` in the Studio to see it). No music is added.
+Two compositions share one edit (`src/Trailer/shots.ts`), both ~20s at 30fps:
+
+- `Trailer`: 1080×1920 for TikTok / Reels. The footage keeps its original 16:9 framing in a band across the middle, over a blurred copy of itself; the title sits above it and captions below, all inside the platform safe zone.
+- `TrailerWide`: 1920×1080, the footage's original format.
+
+The sound is an original score synthesized by `scripts/make_score.py` (no copyrighted music), timed to the edit's cut sheet, and ducked under the lines of dialogue kept from the footage.
 
 1. Put the footage at `public/footage/day-in-the-life.mov` (git-ignored; it is ~1 GB).
-2. In the Studio (`npm run dev`), set `source` and tune each shot's `startAt` (seconds), `durationInFrames`, `zoom` and `focusX`.
-3. Render: `npm run render:trailer` → `out/trailer.mp4`.
+2. After changing the edit, regenerate the score: `npm run score` (needs Python with numpy).
+3. Render: `npm run render:trailer` → `out/trailer.mp4`, `npm run render:trailer-wide` → `out/trailer-wide.mp4`.

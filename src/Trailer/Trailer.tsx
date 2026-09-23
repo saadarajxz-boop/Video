@@ -1,6 +1,7 @@
 import "@fontsource/anton/400.css";
 import {
   AbsoluteFill,
+  Audio,
   Easing,
   interpolate,
   OffthreadVideo,
@@ -10,92 +11,109 @@ import {
   useCurrentFrame,
   useVideoConfig,
 } from "remotion";
-import { Shot, TrailerProps } from "./shots";
+import { Shot, shotStarts, TrailerProps, Voiceover } from "./shots";
 
 const FONT = "Anton, Impact, 'Arial Black', sans-serif";
+const CAPTION_FONT = "'Helvetica Neue', Arial, sans-serif";
 
 // TikTok / Reels overlay their UI on the top ~210px, the bottom ~480px and a
 // ~150px column on the right. Everything important stays inside this box.
 const SAFE = { top: 210, bottom: 480, left: 150, right: 150 };
 
-const ShotView: React.FC<{
-  shot: Shot;
-  index: number;
-  source: string;
-  sourceAudio: boolean;
-}> = ({ shot, index, source, sourceAudio }) => {
+// The footage keeps its original 16:9 framing. On a vertical canvas it sits in
+// a band across the middle, over a blurred, darkened copy of itself.
+const useLayout = () => {
+  const { width, height } = useVideoConfig();
+  const vertical = height > width;
+  const bandHeight = vertical ? Math.round((width * 9) / 16) : height;
+  const bandTop = Math.round((height - bandHeight) / 2);
+  return { vertical, width, height, bandHeight, bandTop };
+};
+
+const ShotView: React.FC<{ shot: Shot; source: string }> = ({
+  shot,
+  source,
+}) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
-  const progress = frame / shot.durationInFrames;
-  const [from, to] = shot.zoom === 1 ? [1.0, 1.08] : [1.08, 1.0];
-  const scale = interpolate(progress, [0, 1], [from, to], {
+  const { vertical, bandHeight, bandTop } = useLayout();
+  const d = shot.durationInFrames;
+  const [from, to] = shot.zoom === 1 ? [1.0, 1.05] : [1.05, 1.0];
+  const scale = interpolate(frame / d, [0, 1], [from, to], {
     easing: Easing.out(Easing.quad),
   });
-  const src = shot.src ?? source;
+  const src = staticFile(shot.src ?? source);
+  const startFrom = Math.round(shot.startAt * fps);
+  // Short fades on the voice so hard cuts don't click.
+  const voiceVolume = (f: number) =>
+    interpolate(f, [0, 1, d - 4, d], [0, 1, 1, 0], {
+      extrapolateLeft: "clamp",
+      extrapolateRight: "clamp",
+    }) * shot.voiceGain;
 
   return (
-    <AbsoluteFill style={{ transform: `scale(${scale})` }}>
-      {src ? (
+    <AbsoluteFill>
+      {vertical ? (
+        <AbsoluteFill style={{ transform: "scale(1.15)" }}>
+          <OffthreadVideo
+            src={src}
+            startFrom={startFrom}
+            muted
+            style={{
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+              filter: "blur(40px) brightness(0.35)",
+            }}
+          />
+        </AbsoluteFill>
+      ) : null}
+      <div
+        style={{
+          position: "absolute",
+          top: bandTop,
+          left: 0,
+          right: 0,
+          height: bandHeight,
+          overflow: "hidden",
+          boxShadow: vertical ? "0 30px 80px rgba(0,0,0,0.6)" : undefined,
+        }}
+      >
         <OffthreadVideo
-          src={staticFile(src)}
-          startFrom={Math.round(shot.startAt * fps)}
-          muted={!sourceAudio}
+          src={src}
+          startFrom={startFrom}
+          muted={!shot.voice}
+          volume={voiceVolume}
           style={{
             width: "100%",
             height: "100%",
-            objectFit: "cover",
-            objectPosition: `${shot.focusX}% 50%`,
+            objectFit: "contain",
+            transform: `scale(${scale})`,
+            filter: "contrast(1.08) saturate(1.05)",
           }}
         />
-      ) : (
-        <Placeholder index={index} />
-      )}
+      </div>
     </AbsoluteFill>
   );
 };
 
-const Placeholder: React.FC<{ index: number }> = ({ index }) => (
-  <AbsoluteFill
-    style={{
-      background: `linear-gradient(160deg, hsl(${(index * 37) % 360} 30% 22%), hsl(${(index * 37 + 60) % 360} 35% 10%))`,
-      justifyContent: "flex-end",
-      alignItems: "center",
-      paddingBottom: 560,
-      color: "rgba(255,255,255,0.35)",
-      fontFamily: "sans-serif",
-      fontSize: 40,
-      letterSpacing: 6,
-    }}
-  >
-    SHOT {index + 1}
-  </AbsoluteFill>
-);
-
-// Cinematic grade: a little contrast, a soft vignette and a darker top/bottom.
-const Grade: React.FC = () => (
-  <AbsoluteFill
-    style={{
-      background:
-        "radial-gradient(ellipse at center, rgba(0,0,0,0) 45%, rgba(0,0,0,0.55) 100%)",
-    }}
-  />
-);
-
-const TextBlock: React.FC<{ children: React.ReactNode }> = ({ children }) => (
-  <AbsoluteFill
-    style={{
-      paddingTop: SAFE.top,
-      paddingBottom: SAFE.bottom,
-      paddingLeft: SAFE.left,
-      paddingRight: SAFE.right,
-      justifyContent: "center",
-      alignItems: "center",
-      textAlign: "center",
-    }}
-  >
-    {children}
-  </AbsoluteFill>
-);
+// Soft vignette over the footage band.
+const Grade: React.FC = () => {
+  const { bandTop, bandHeight } = useLayout();
+  return (
+    <div
+      style={{
+        position: "absolute",
+        top: bandTop,
+        left: 0,
+        right: 0,
+        height: bandHeight,
+        background:
+          "radial-gradient(ellipse at center, rgba(0,0,0,0) 55%, rgba(0,0,0,0.5) 100%)",
+      }}
+    />
+  );
+};
 
 const headline: React.CSSProperties = {
   fontFamily: FONT,
@@ -104,15 +122,19 @@ const headline: React.CSSProperties = {
   lineHeight: 0.95,
   textShadow: "0 6px 30px rgba(0,0,0,0.6)",
   margin: 0,
+  textAlign: "center",
 };
 
+// Title sits in the empty space above the footage on vertical, or over the
+// middle of the frame on landscape.
 const TitleCard: React.FC<{ text: string; duration: number }> = ({
   text,
   duration,
 }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
-  const enter = spring({ frame: frame - 6, fps, config: { damping: 200 } });
+  const { vertical, bandTop } = useLayout();
+  const enter = spring({ frame: frame - 4, fps, config: { damping: 200 } });
   const exit = interpolate(frame, [duration - 8, duration], [1, 0], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
@@ -121,9 +143,20 @@ const TitleCard: React.FC<{ text: string; duration: number }> = ({
   const words = text.split(" ");
   const lastWords = words.slice(-2).join(" ");
   const firstWords = words.slice(0, -2).join(" ");
+  const box: React.CSSProperties = vertical
+    ? { top: SAFE.top, height: bandTop - SAFE.top, left: 0, right: 0 }
+    : { top: 0, bottom: 0, left: 0, right: 0 };
 
   return (
-    <TextBlock>
+    <div
+      style={{
+        position: "absolute",
+        ...box,
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+      }}
+    >
       <div
         style={{
           opacity: enter * exit,
@@ -131,22 +164,85 @@ const TitleCard: React.FC<{ text: string; duration: number }> = ({
         }}
       >
         {firstWords ? (
-          <p style={{ ...headline, fontSize: 88, letterSpacing: tracking }}>
+          <p
+            style={{
+              ...headline,
+              fontSize: vertical ? 80 : 90,
+              letterSpacing: tracking,
+            }}
+          >
             {firstWords}
           </p>
         ) : null}
-        <p style={{ ...headline, fontSize: 176, letterSpacing: tracking / 2 }}>
+        <p
+          style={{
+            ...headline,
+            fontSize: vertical ? 150 : 180,
+            letterSpacing: tracking / 2,
+          }}
+        >
           {lastWords}
         </p>
       </div>
-    </TextBlock>
+    </div>
+  );
+};
+
+// Subtitle for the lines of dialogue kept from the footage.
+const Caption: React.FC<{ text: string; duration: number }> = ({
+  text,
+  duration,
+}) => {
+  const frame = useCurrentFrame();
+  const { vertical, bandTop, bandHeight, height } = useLayout();
+  const opacity = interpolate(
+    frame,
+    [0, 4, duration - 4, duration],
+    [0, 1, 1, 0],
+    {
+      extrapolateLeft: "clamp",
+      extrapolateRight: "clamp",
+    },
+  );
+  const top = vertical ? bandTop + bandHeight + 40 : height - 190;
+
+  return (
+    <div
+      style={{
+        position: "absolute",
+        top,
+        left: SAFE.left,
+        right: SAFE.right,
+        display: "flex",
+        justifyContent: "center",
+        opacity,
+      }}
+    >
+      <p
+        style={{
+          fontFamily: CAPTION_FONT,
+          fontWeight: 800,
+          fontSize: vertical ? 50 : 54,
+          lineHeight: 1.2,
+          color: "white",
+          textAlign: "center",
+          margin: 0,
+          padding: "10px 22px",
+          borderRadius: 14,
+          backgroundColor: "rgba(0,0,0,0.55)",
+        }}
+      >
+        {text}
+      </p>
+    </div>
   );
 };
 
 const EndCard: React.FC<{ text: string }> = ({ text }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
-  const dim = interpolate(frame, [0, 12], [0, 0.6], {
+  const { vertical } = useLayout();
+  const dim = interpolate(frame, [0, 12], [0, 0.7], {
     extrapolateRight: "clamp",
   });
   const lines = text.split(/\s+(?=OUT\b)/i);
@@ -154,7 +250,14 @@ const EndCard: React.FC<{ text: string }> = ({ text }) => {
   return (
     <>
       <AbsoluteFill style={{ backgroundColor: `rgba(0,0,0,${dim})` }} />
-      <TextBlock>
+      <AbsoluteFill
+        style={{
+          paddingTop: vertical ? SAFE.top : 0,
+          paddingBottom: vertical ? SAFE.bottom : 0,
+          justifyContent: "center",
+          alignItems: "center",
+        }}
+      >
         {lines.map((line, i) => {
           const pop = spring({
             frame: frame - 6 - i * 8,
@@ -176,7 +279,7 @@ const EndCard: React.FC<{ text: string }> = ({ text }) => {
             </p>
           );
         })}
-      </TextBlock>
+      </AbsoluteFill>
     </>
   );
 };
@@ -204,31 +307,42 @@ const SafeZoneGuide: React.FC = () => (
   />
 );
 
+// A line of dialogue from elsewhere in the footage, laid over the current shots.
+const VoiceoverLine: React.FC<{ line: Voiceover; source: string }> = ({
+  line,
+  source,
+}) => {
+  const { fps } = useVideoConfig();
+  const d = line.durationInFrames;
+  return (
+    <>
+      <Audio
+        src={staticFile(source)}
+        startFrom={Math.round(line.startAt * fps)}
+        volume={(f) =>
+          interpolate(f, [0, 1, d - 4, d], [0, 1, 1, 0], {
+            extrapolateLeft: "clamp",
+            extrapolateRight: "clamp",
+          })
+        }
+      />
+      <Caption text={line.caption} duration={d} />
+    </>
+  );
+};
+
 export const Trailer: React.FC<TrailerProps> = ({
   source,
-  sourceAudio,
+  score,
   showSafeZone,
   titleText,
   endText,
   shots,
+  voiceovers,
 }) => {
   const { durationInFrames } = useVideoConfig();
-  const starts = shots.reduce<number[]>(
-    (acc, s, i) => [
-      ...acc,
-      i === 0 ? 0 : acc[i - 1] + shots[i - 1].durationInFrames,
-    ],
-    [],
-  );
-  const heroIndex = shots.reduce(
-    (best, s, i) =>
-      i > 0 &&
-      i < shots.length - 1 &&
-      s.durationInFrames > shots[best].durationInFrames
-        ? i
-        : best,
-    1,
-  );
+  const starts = shotStarts(shots);
+  const heroIndex = shots.findIndex((s) => s.hero);
   const endStart = starts[shots.length - 1];
   const fadeOut = interpolate(
     useCurrentFrame(),
@@ -239,34 +353,50 @@ export const Trailer: React.FC<TrailerProps> = ({
 
   return (
     <AbsoluteFill style={{ backgroundColor: "black" }}>
-      <AbsoluteFill style={{ filter: "contrast(1.08) saturate(1.05)" }}>
-        {shots.map((shot, i) => (
+      {shots.map((shot, i) => (
+        <Sequence
+          key={i}
+          from={starts[i]}
+          durationInFrames={shot.durationInFrames}
+          premountFor={30}
+        >
+          <ShotView shot={shot} source={source} />
+        </Sequence>
+      ))}
+      <Grade />
+      {shots.map((shot, i) =>
+        shot.caption ? (
           <Sequence
-            key={i}
+            key={`c${i}`}
             from={starts[i]}
             durationInFrames={shot.durationInFrames}
-            premountFor={30}
           >
-            <ShotView
-              shot={shot}
-              index={i}
-              source={source}
-              sourceAudio={sourceAudio}
-            />
+            <Caption text={shot.caption} duration={shot.durationInFrames} />
           </Sequence>
-        ))}
-      </AbsoluteFill>
-      <Grade />
+        ) : null,
+      )}
+      {voiceovers.map((line, i) => (
+        <Sequence
+          key={`v${i}`}
+          from={line.from}
+          durationInFrames={line.durationInFrames}
+        >
+          <VoiceoverLine line={line} source={source} />
+        </Sequence>
+      ))}
       <Sequence durationInFrames={shots[0].durationInFrames}>
         <TitleCard text={titleText} duration={shots[0].durationInFrames} />
       </Sequence>
-      <Sequence from={starts[heroIndex]} durationInFrames={4}>
-        <Flash />
-      </Sequence>
+      {heroIndex > 0 ? (
+        <Sequence from={starts[heroIndex]} durationInFrames={4}>
+          <Flash />
+        </Sequence>
+      ) : null}
       <Sequence from={endStart}>
         <EndCard text={endText} />
       </Sequence>
       <AbsoluteFill style={{ backgroundColor: "black", opacity: fadeOut }} />
+      {score ? <Audio src={staticFile(score)} /> : null}
       {showSafeZone ? <SafeZoneGuide /> : null}
     </AbsoluteFill>
   );
