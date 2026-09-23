@@ -75,4 +75,4 @@ The complete 12-minute video, **uncut and in original order**, with everything l
 - Quote cards for key lines, a follower counter, info cards for facts/tips, section titles, an opening title and a subscribe button.
 - Color fixes per section (switched on scene cuts) and leveled, loudness-normalized audio (`scripts/level_audio.py`, target -14 LUFS).
 
-Edit the overlays in `src/FullVideo/edit.ts`. Render with `npm run render:full` → `out/day-in-the-life-edited.mp4`.
+Edit the overlays in `src/FullVideo/edit.ts`. Render with `npm run render:full` → `out/day-in-the-life-final.mp4` (the last step re-muxes the leveled audio directly, which keeps it sample-aligned with the picture).
